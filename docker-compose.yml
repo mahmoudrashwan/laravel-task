@@ -1,0 +1,77 @@
+version: '2.0'
+
+services:
+#  s3vol:
+#      image: elementar/s3-volume
+#      command: /data s3://rashwan-task1
+#      environment:
+#        - BACKUP_INTERVAL={INTERVALL IN MINUTES (2m)}
+#        - AWS_ACCESS_KEY_ID=AKIA2BXNCT2LKMZH6PZS
+#        - AWS_SECRET_ACCESS_KEY=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
+#      volumes:
+#        - s3data:/data
+
+  #PHP Service
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: cloudsigma.com/php
+    container_name: app
+    restart: unless-stopped
+    tty: true
+    environment:
+      SERVICE_NAME: app
+      SERVICE_TAGS: dev
+    working_dir: /var/www/html/
+    volumes:
+       - ./:/var/www/html/
+       - ./php/laravel.ini:/usr/local/etc/php/conf.d/laravel.ini
+    networks:
+      - app-network
+
+#Nginx Service
+  webserver:
+    image: nginx:alpine
+    container_name: webserver
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./:/var/www/html/
+      - ./nginx/conf.d/:/etc/nginx/conf.d/
+    networks:
+      - app-network
+
+  #MySQL Service
+  db:
+    image: mysql:5.7.32
+    container_name: db
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: laravel_web
+      MYSQL_ROOT_PASSWORD: 963852@Moo
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+    volumes:
+    #  - s3data:/data
+      - dbdata:/var/lib/mysql/
+      - ./mysql/my.cnf:/etc/mysql/my.cnf
+    networks:
+      - app-network
+
+#Docker Networks
+networks:
+  app-network:
+    driver: bridge
+
+#Volumes
+volumes:
+#  s3data:
+  dbdata:
+    driver: local
